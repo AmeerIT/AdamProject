@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data;
 using System.Data.Sql;
+using System.Drawing;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -9,6 +11,8 @@ namespace AdamProject
 
     public partial class Form1 : Form
     {
+        private const string StartServer = "Start server";
+        private const string StopServer = "Stop server";
         static readonly string idle = "";
 
         public Form1()
@@ -18,7 +22,6 @@ namespace AdamProject
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            UpdateStatus(idle);
         }
 
         /// <summary>
@@ -28,38 +31,9 @@ namespace AdamProject
         /// <param name="e"></param>
         private async void btnConnect_Click(object sender, EventArgs e)
         {
-            UpdateStatus("Getting servers list");
-
-            btnConnect.Enabled = false;
-            await Task.Factory.StartNew(() =>
-            {
-                //System class that lists the available servers/instances on the network.
-                //Disclamer: 
-                //this class Does not List on demand db such localdb located outside the
-                //default SQLServer folder, i.e. localdb created per project.
-                SqlDataSourceEnumerator instance = SqlDataSourceEnumerator.Instance;
-                DataTable table = instance.GetDataSources();
-                string ServerName = Environment.MachineName;
-                //iterate through the available instances 
-                foreach (DataRow row in table.Rows)
-                {
-                    //Add the instance to the treeview
-                    Invoke((MethodInvoker)delegate { treeView.Nodes.Add(new TreeNode($"{row["Name"]}")); });
-                    Console.WriteLine(ServerName + "\\" + row["InstanceName"].ToString());
-                }
-
-                Invoke((MethodInvoker)delegate
-                {
-                    //Enable the operations based on the servers amount
-                    btnQuery.Enabled =
-                    btnScan.Enabled =
-
-                    //check if the tree view have more than one item
-                    btnUpload.Enabled = treeView.Nodes?.Count >= 1;
-                    btnConnect.Enabled = true;
-                    UpdateStatus(idle);
-                });
-            });
+            btnConnect.BackColor = btnConnect.BackColor == Color.Green ? Color.White : Color.Green;
+            btnConnect.ForeColor = btnConnect.ForeColor == Color.White ? Color.Black : Color.White;
+            btnConnect.Text = btnConnect.Text == StartServer ? StopServer : StartServer;
         }
 
         /// <summary>
@@ -67,9 +41,10 @@ namespace AdamProject
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnScan_Click(object sender, EventArgs e)
+        private void btnDeleteSelectedObjects_Click(object sender, EventArgs e)
         {
-
+            for (int i = itemsBox.CheckedItems.Count; i > 0; i--)
+                itemsBox.Items.Remove(itemsBox.CheckedItems[i- 1]);
         }
 
         /// <summary>
@@ -77,9 +52,9 @@ namespace AdamProject
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnQuery_Click(object sender, EventArgs e)
+        private void btnDeleteAllObjects_Click(object sender, EventArgs e)
         {
-
+            itemsBox.Items.Clear();
         }
 
         /// <summary>
@@ -92,10 +67,14 @@ namespace AdamProject
             UpdateStatus("Select a file");
             using (OpenFileDialog openFile = new OpenFileDialog() { Multiselect = false })
             {
+                UpdateStatus("Reading file");
                 //if the user selected a file
                 if (openFile.ShowDialog().Equals(DialogResult.OK))
                 {
-
+                    var input = File.ReadAllText(openFile.FileName);
+                    var inputarray = input.Split('\n');
+                    for (int i = 0; i < inputarray.Length; i++)
+                        itemsBox.Items.Add(new Book(inputarray[i]));
                 }
             }
             UpdateStatus(idle);
