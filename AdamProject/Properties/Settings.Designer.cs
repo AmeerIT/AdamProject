@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AdamProject.Properties
+namespace Book.Properties
 {
 
 
